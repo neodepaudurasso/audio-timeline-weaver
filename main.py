@@ -164,6 +164,15 @@ class AudioEditor(QMainWindow):
                 try:
                     file_name = os.path.basename(file_path)
                     print(f"Loading file: {file_path}")
+                    
+                    # Check if ffmpeg is available
+                    if not self.audio_processor.ffmpeg_path:
+                        print("FFmpeg path not found. Checking for ffmpeg installation...")
+                        message = ("FFmpeg not found. Please ensure FFmpeg is correctly installed "
+                                  "and available in the project directory or system path.")
+                        QMessageBox.critical(self, "FFmpeg Not Found", message)
+                        continue
+                    
                     success = self.audio_processor.load_file(file_path)
                     if success:
                         self.file_list.addItem(file_name)
@@ -171,10 +180,14 @@ class AudioEditor(QMainWindow):
                         print(f"Successfully imported: {file_name}")
                     else:
                         print(f"Failed to import: {file_path}")
-                        QMessageBox.warning(self, "Import Warning", 
-                                       f"Failed to import {file_path}. Check if FFmpeg is properly configured.")
+                        ffmpeg_msg = (f"Failed to import {file_name}.\n\n"
+                                    f"Make sure FFmpeg is properly configured.\n"
+                                    f"Current FFmpeg path: {self.audio_processor.ffmpeg_path}")
+                        QMessageBox.warning(self, "Import Warning", ffmpeg_msg)
                 except Exception as e:
                     print(f"Exception during import: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
                     QMessageBox.critical(self, "Import Error", 
                                        f"Failed to import {file_path}: {str(e)}")
     
@@ -214,6 +227,8 @@ class AudioEditor(QMainWindow):
                     self.statusBar().showMessage(f"Failed to add {file_name} to timeline")
             except Exception as e:
                 print(f"Exception adding to timeline: {str(e)}")
+                import traceback
+                traceback.print_exc()
                 QMessageBox.warning(self, "Timeline Error", f"Error adding clip to timeline: {str(e)}")
         else:
             print(f"No audio data found for {file_name}")

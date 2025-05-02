@@ -9,12 +9,15 @@ class AudioProcessor:
     def __init__(self):
         self.audio_files = {}  # Dictionary to store loaded audio files
         
-        # Specify the ffmpeg path correctly
+        # Specify the ffmpeg path correctly with more comprehensive options
         ffmpeg_paths = [
-            'ffmpeg.exe',                  # Local directory
-            'ffmpge/bin/ffmpeg.exe',        # Path you specified
+            'ffmpeg.exe',                         # Local directory
+            'ffmpge/bin/ffmpeg.exe',              # Path specified by user
             os.path.abspath('ffmpge/bin/ffmpeg.exe'),
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ffmpge/bin/ffmpeg.exe')
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ffmpge/bin/ffmpeg.exe'),
+            'C:/ffmpeg/bin/ffmpeg.exe',           # Common installation locations
+            'C:/Program Files/ffmpeg/bin/ffmpeg.exe',
+            os.path.join(os.environ.get('ProgramFiles', ''), 'ffmpeg/bin/ffmpeg.exe')
         ]
         
         self.ffmpeg_path = None
@@ -27,8 +30,12 @@ class AudioProcessor:
             print(f"FFmpeg found at: {self.ffmpeg_path}")
             # Configure pydub to use our ffmpeg path
             AudioSegment.converter = self.ffmpeg_path
+            os.environ["PATH"] += os.pathsep + os.path.dirname(self.ffmpeg_path)
         else:
             print("WARNING: FFmpeg not found. Please ensure it's installed correctly.")
+            print("Searched in the following locations:")
+            for path in ffmpeg_paths:
+                print(f"- {path}")
         
         # Create temp directory for audio processing
         os.makedirs('temp', exist_ok=True)
@@ -37,7 +44,18 @@ class AudioProcessor:
         """Load an audio file and store it in memory"""
         try:
             file_name = os.path.basename(file_path)
+            print(f"Attempting to load audio file: {file_path}")
+            print(f"Using FFmpeg at: {self.ffmpeg_path}")
+            
+            # Explicitly set the FFmpeg path for this operation
+            AudioSegment.converter = self.ffmpeg_path
+            
+            # Try to load the audio file
             audio = AudioSegment.from_file(file_path)
+            
+            # Get and print some audio information for debugging
+            print(f"Audio loaded successfully: {len(audio)/1000.0}s, {audio.channels} channels, {audio.frame_rate}Hz")
+            
             self.audio_files[file_name] = {
                 'path': file_path,
                 'audio': audio,
@@ -47,12 +65,45 @@ class AudioProcessor:
             return True
         except CouldntDecodeError:
             print(f"Error: Couldn't decode {file_path}")
+            print("This often indicates that FFmpeg cannot process the file correctly.")
+            return False
+        except FileNotFoundError:
+            print(f"Error: File not found - {file_path}")
             return False
         except Exception as e:
             print(f"Error loading file {file_path}: {str(e)}")
+            # More detailed debugging information
+            import traceback
+            traceback.print_exc()
             return False
     
-    # ... keep existing code (_get_samples, get_audio_data, remove_file methods)
+    def _get_samples(self, audio):
+        """Extract sample array from audio segment"""
+        try:
+            # Convert stereo to mono for simplified processing
+            if audio.channels > 1:
+                audio = audio.set_channels(1)
+            
+            # Get array samples normalized between -1 and 1
+            samples = np.array(audio.get_array_of_samples()).astype(float)
+            max_value = np.iinfo(audio.array_type).max
+            samples = samples / max_value
+            
+            return samples
+        except Exception as e:
+            print(f"Error extracting samples: {str(e)}")
+            return np.array([0])  # Return empty array on error
+    
+    def get_audio_data(self, file_name):
+        """Get audio data for a file by name"""
+        return self.audio_files.get(file_name)
+    
+    def remove_file(self, file_name):
+        """Remove a file from memory"""
+        if file_name in self.audio_files:
+            del self.audio_files[file_name]
+            return True
+        return False
     
     def cut_audio(self, file_name, start_time, end_time):
         """Cut a segment from an audio file"""
