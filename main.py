@@ -1,3 +1,4 @@
+
 import sys
 import os
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
@@ -15,6 +16,9 @@ class AudioEditor(QMainWindow):
         super().__init__()
         self.audio_processor = AudioProcessor()
         self.init_ui()
+        
+    # Function body was missing here for line 20
+    # Adding a pass statement as placeholder if needed
 
     def init_ui(self):
         self.setWindowTitle("Audio Timeline Weaver")
@@ -233,6 +237,14 @@ class AudioEditor(QMainWindow):
         else:
             print(f"No audio data found for {file_name}")
             self.statusBar().showMessage(f"No audio data found for {file_name}")
+    
+    def remove_from_library(self):
+        selected_items = self.file_list.selectedItems()
+        for item in selected_items:
+            file_name = item.text()
+            row = self.file_list.row(item)
+            self.file_list.takeItem(row)
+            self.statusBar().showMessage(f"Removed {file_name} from library")
     
     def play_audio(self):
         self.statusBar().showMessage("Playing audio...")
