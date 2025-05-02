@@ -16,9 +16,6 @@ class AudioEditor(QMainWindow):
         super().__init__()
         self.audio_processor = AudioProcessor()
         self.init_ui()
-        
-    # Function body was missing here for line 20
-    # Adding a pass statement as placeholder if needed
 
     def init_ui(self):
         self.setWindowTitle("Audio Timeline Weaver")
@@ -167,31 +164,10 @@ class AudioEditor(QMainWindow):
             for file_path in file_paths:
                 try:
                     file_name = os.path.basename(file_path)
-                    print(f"Loading file: {file_path}")
-                    
-                    # Check if ffmpeg is available
-                    if not self.audio_processor.ffmpeg_path:
-                        print("FFmpeg path not found. Checking for ffmpeg installation...")
-                        message = ("FFmpeg not found. Please ensure FFmpeg is correctly installed "
-                                  "and available in the project directory or system path.")
-                        QMessageBox.critical(self, "FFmpeg Not Found", message)
-                        continue
-                    
-                    success = self.audio_processor.load_file(file_path)
-                    if success:
-                        self.file_list.addItem(file_name)
-                        self.statusBar().showMessage(f"Imported: {file_name}")
-                        print(f"Successfully imported: {file_name}")
-                    else:
-                        print(f"Failed to import: {file_path}")
-                        ffmpeg_msg = (f"Failed to import {file_name}.\n\n"
-                                    f"Make sure FFmpeg is properly configured.\n"
-                                    f"Current FFmpeg path: {self.audio_processor.ffmpeg_path}")
-                        QMessageBox.warning(self, "Import Warning", ffmpeg_msg)
+                    self.audio_processor.load_file(file_path)
+                    self.file_list.addItem(file_name)
+                    self.statusBar().showMessage(f"Imported: {file_name}")
                 except Exception as e:
-                    print(f"Exception during import: {str(e)}")
-                    import traceback
-                    traceback.print_exc()
                     QMessageBox.critical(self, "Import Error", 
                                        f"Failed to import {file_path}: {str(e)}")
     
@@ -216,34 +192,18 @@ class AudioEditor(QMainWindow):
     
     def add_to_timeline(self, item):
         file_name = item.text()
-        print(f"Attempting to add to timeline: {file_name}")
         audio_data = self.audio_processor.get_audio_data(file_name)
         if audio_data:
-            print(f"Audio data retrieved, duration: {audio_data['duration']} seconds")
-            print(f"Audio samples shape: {audio_data['samples'].shape if hasattr(audio_data['samples'], 'shape') else 'unknown'}")
-            try:
-                clip = self.timeline.add_audio_clip(file_name, audio_data)
-                if clip:
-                    self.statusBar().showMessage(f"Added {file_name} to timeline")
-                    print(f"Successfully added {file_name} to timeline")
-                else:
-                    print(f"Failed to create clip for {file_name}")
-                    self.statusBar().showMessage(f"Failed to add {file_name} to timeline")
-            except Exception as e:
-                print(f"Exception adding to timeline: {str(e)}")
-                import traceback
-                traceback.print_exc()
-                QMessageBox.warning(self, "Timeline Error", f"Error adding clip to timeline: {str(e)}")
-        else:
-            print(f"No audio data found for {file_name}")
-            self.statusBar().showMessage(f"No audio data found for {file_name}")
+            self.timeline.add_audio_clip(file_name, audio_data)
+            self.statusBar().showMessage(f"Added {file_name} to timeline")
     
     def remove_from_library(self):
         selected_items = self.file_list.selectedItems()
         for item in selected_items:
-            file_name = item.text()
             row = self.file_list.row(item)
+            file_name = item.text()
             self.file_list.takeItem(row)
+            self.audio_processor.remove_file(file_name)
             self.statusBar().showMessage(f"Removed {file_name} from library")
     
     def play_audio(self):
