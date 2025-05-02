@@ -8,11 +8,27 @@ from pydub.exceptions import CouldntDecodeError
 class AudioProcessor:
     def __init__(self):
         self.audio_files = {}  # Dictionary to store loaded audio files
-        self.ffmpeg_path = 'ffmpeg'  # Assume ffmpeg is in the same directory
         
-        # Check if ffmpeg exists
-        if os.path.exists('ffmpeg.exe'):
-            self.ffmpeg_path = os.path.abspath('ffmpeg.exe')
+        # Specify the ffmpeg path correctly
+        ffmpeg_paths = [
+            'ffmpeg.exe',                  # Local directory
+            'ffmpge/bin/ffmpeg.exe',        # Path you specified
+            os.path.abspath('ffmpge/bin/ffmpeg.exe'),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ffmpge/bin/ffmpeg.exe')
+        ]
+        
+        self.ffmpeg_path = None
+        for path in ffmpeg_paths:
+            if os.path.exists(path):
+                self.ffmpeg_path = path
+                break
+        
+        if self.ffmpeg_path:
+            print(f"FFmpeg found at: {self.ffmpeg_path}")
+            # Configure pydub to use our ffmpeg path
+            AudioSegment.converter = self.ffmpeg_path
+        else:
+            print("WARNING: FFmpeg not found. Please ensure it's installed correctly.")
         
         # Create temp directory for audio processing
         os.makedirs('temp', exist_ok=True)
@@ -36,35 +52,7 @@ class AudioProcessor:
             print(f"Error loading file {file_path}: {str(e)}")
             return False
     
-    def _get_samples(self, audio):
-        """Convert audio segment to numpy array of samples for visualization"""
-        # Convert to mono for simpler processing
-        audio = audio.set_channels(1)
-        samples = np.array(audio.get_array_of_samples())
-        
-        # Normalize samples
-        max_sample = np.max(np.abs(samples))
-        if max_sample > 0:
-            samples = samples / max_sample
-        
-        # Downsample for visualization if too large
-        if len(samples) > 100000:
-            # Get a downsampled version for visualization
-            ratio = len(samples) // 100000 + 1
-            samples = samples[::ratio]
-        
-        return samples
-    
-    def get_audio_data(self, file_name):
-        """Get audio data for a specific file"""
-        return self.audio_files.get(file_name)
-    
-    def remove_file(self, file_name):
-        """Remove an audio file from memory"""
-        if file_name in self.audio_files:
-            del self.audio_files[file_name]
-            return True
-        return False
+    # ... keep existing code (_get_samples, get_audio_data, remove_file methods)
     
     def cut_audio(self, file_name, start_time, end_time):
         """Cut a segment from an audio file"""

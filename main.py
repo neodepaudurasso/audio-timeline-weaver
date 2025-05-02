@@ -1,4 +1,3 @@
-
 import sys
 import os
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
@@ -164,10 +163,18 @@ class AudioEditor(QMainWindow):
             for file_path in file_paths:
                 try:
                     file_name = os.path.basename(file_path)
-                    self.audio_processor.load_file(file_path)
-                    self.file_list.addItem(file_name)
-                    self.statusBar().showMessage(f"Imported: {file_name}")
+                    print(f"Loading file: {file_path}")
+                    success = self.audio_processor.load_file(file_path)
+                    if success:
+                        self.file_list.addItem(file_name)
+                        self.statusBar().showMessage(f"Imported: {file_name}")
+                        print(f"Successfully imported: {file_name}")
+                    else:
+                        print(f"Failed to import: {file_path}")
+                        QMessageBox.warning(self, "Import Warning", 
+                                       f"Failed to import {file_path}. Check if FFmpeg is properly configured.")
                 except Exception as e:
+                    print(f"Exception during import: {str(e)}")
                     QMessageBox.critical(self, "Import Error", 
                                        f"Failed to import {file_path}: {str(e)}")
     
@@ -192,19 +199,25 @@ class AudioEditor(QMainWindow):
     
     def add_to_timeline(self, item):
         file_name = item.text()
+        print(f"Attempting to add to timeline: {file_name}")
         audio_data = self.audio_processor.get_audio_data(file_name)
         if audio_data:
-            self.timeline.add_audio_clip(file_name, audio_data)
-            self.statusBar().showMessage(f"Added {file_name} to timeline")
-    
-    def remove_from_library(self):
-        selected_items = self.file_list.selectedItems()
-        for item in selected_items:
-            row = self.file_list.row(item)
-            file_name = item.text()
-            self.file_list.takeItem(row)
-            self.audio_processor.remove_file(file_name)
-            self.statusBar().showMessage(f"Removed {file_name} from library")
+            print(f"Audio data retrieved, duration: {audio_data['duration']} seconds")
+            print(f"Audio samples shape: {audio_data['samples'].shape if hasattr(audio_data['samples'], 'shape') else 'unknown'}")
+            try:
+                clip = self.timeline.add_audio_clip(file_name, audio_data)
+                if clip:
+                    self.statusBar().showMessage(f"Added {file_name} to timeline")
+                    print(f"Successfully added {file_name} to timeline")
+                else:
+                    print(f"Failed to create clip for {file_name}")
+                    self.statusBar().showMessage(f"Failed to add {file_name} to timeline")
+            except Exception as e:
+                print(f"Exception adding to timeline: {str(e)}")
+                QMessageBox.warning(self, "Timeline Error", f"Error adding clip to timeline: {str(e)}")
+        else:
+            print(f"No audio data found for {file_name}")
+            self.statusBar().showMessage(f"No audio data found for {file_name}")
     
     def play_audio(self):
         self.statusBar().showMessage("Playing audio...")
