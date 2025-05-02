@@ -1,73 +1,69 @@
-# Welcome to your Lovable project
 
-## Project info
+# Audio Timeline Weaver
 
-**URL**: https://lovable.dev/projects/26e9420e-43bb-4ed7-81f6-926b5ee6f130
+A simple audio editor built with Python and PyQt5 that allows you to import, edit, and export audio files.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- Import audio files (MP3, WAV, OGG, FLAC)
+- Visualize audio waveforms
+- Arrange audio clips on a timeline
+- Basic editing tools (cut, split, delete)
+- Export edited audio (MP3, WAV)
 
-**Use Lovable**
+## Prerequisites
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/26e9420e-43bb-4ed7-81f6-926b5ee6f130) and start prompting.
+- Python 3.8 or higher
+- FFmpeg (must be placed in the project directory)
 
-Changes made via Lovable will be committed automatically to this repo.
+## FFmpeg Setup
 
-**Use your preferred IDE**
+1. Download FFmpeg from [the official website](https://ffmpeg.org/download.html) or [FFmpeg Builds](https://www.gyan.dev/ffmpeg/builds/) (for Windows)
+2. Extract the downloaded package
+3. Copy the `ffmpeg.exe` file to the root directory of this project
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. Run the `install.bat` file to:
+   - Create a Python virtual environment
+   - Install required dependencies
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+install.bat
 ```
 
-**Edit a file directly in GitHub**
+## Running the Application
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. Run the `run.bat` file to start the application:
 
-**Use GitHub Codespaces**
+```
+run.bat
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## User Guide
 
-## What technologies are used for this project?
+### Importing Audio Files
+1. Click the "Import Audio" button
+2. Select one or more audio files to import
+3. The imported files will appear in the Audio Library panel
 
-This project is built with:
+### Working with the Timeline
+1. Double-click on a file in the library to add it to the timeline
+2. Alternatively, right-click on a file and select "Add to Timeline"
+3. Audio clips can be arranged on the timeline
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Editing Audio
+1. Select a clip or a portion of a clip on the timeline
+2. Use the editing tools:
+   - Cut: Remove the selected portion
+   - Split: Divide the clip at the current position
+   - Delete Selection: Remove the selected clip or portion
 
-## How can I deploy this project?
+### Exporting Audio
+1. Click the "Export Audio" button
+2. Choose a file name and format (MP3 or WAV)
+3. Click "Save" to export your edited audio
 
-Simply open [Lovable](https://lovable.dev/projects/26e9420e-43bb-4ed7-81f6-926b5ee6f130) and click on Share -> Publish.
+## Note
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+This is a simple audio editor for basic editing needs. For advanced audio editing, consider professional software like Audacity, Adobe Audition, or similar applications.
