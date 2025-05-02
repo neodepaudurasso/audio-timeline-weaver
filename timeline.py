@@ -1,7 +1,7 @@
 
 from PyQt5.QtWidgets import QWidget, QScrollArea, QHBoxLayout, QVBoxLayout
 from PyQt5.QtGui import QPainter, QColor, QBrush, QPen, QLinearGradient
-from PyQt5.QtCore import Qt, QRect, QPoint, QSize
+from PyQt5.QtCore import Qt, QRect, QPoint, QSize, pyqtSignal
 
 class AudioClip(QWidget):
     def __init__(self, file_name, audio_data, parent=None):
@@ -60,6 +60,9 @@ class AudioClip(QWidget):
                 painter.drawLine(x, y1, x, y2)
 
 class Timeline(QScrollArea):
+    playhead_moved = pyqtSignal(float)  # Signal for playhead movement
+    clip_clicked = pyqtSignal(str)  # Signal for when a clip is clicked
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
@@ -80,6 +83,12 @@ class Timeline(QScrollArea):
         # Timeline tracks
         self.tracks = []
         self.add_track()
+        
+        # Playhead position (0.0 to 1.0)
+        self.playhead_position = 0.0
+        
+        # Total duration of the timeline in seconds
+        self.total_duration = 0.0
     
     def add_track(self):
         """Add a new track to the timeline"""
@@ -105,6 +114,7 @@ class Timeline(QScrollArea):
         
         # Create audio clip widget
         clip = AudioClip(file_name, audio_data)
+        clip.mousePressEvent = lambda event: self.on_clip_clicked(file_name)
         
         # Add to track
         track = self.tracks[track_index]
@@ -126,7 +136,24 @@ class Timeline(QScrollArea):
         if hasattr(self.parent, 'waveform_viewer'):
             self.parent.waveform_viewer.set_waveform_data(audio_data['samples'])
         
+        # Update total duration
+        self.total_duration = max(self.total_duration, audio_data['duration'])
+        
         return clip
+    
+    def on_clip_clicked(self, file_name):
+        """Handle clip click event"""
+        self.clip_clicked.emit(file_name)
+        
+    def set_playhead_position(self, position):
+        """Set playhead position (0.0 to 1.0)"""
+        self.playhead_position = max(0.0, min(1.0, position))
+        self.playhead_moved.emit(self.playhead_position)
+        self.update()
+        
+        # Update waveform viewer if it exists
+        if hasattr(self.parent, 'waveform_viewer'):
+            self.parent.waveform_viewer.set_playhead_position(position)
     
     def clear_timeline(self):
         """Remove all clips from the timeline"""
@@ -135,3 +162,5 @@ class Timeline(QScrollArea):
                 track['layout'].removeWidget(clip)
                 clip.deleteLater()
             track['clips'] = []
+        
+        self.total_duration = 0.0

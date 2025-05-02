@@ -13,6 +13,7 @@ class WaveformViewer(QWidget):
         self.zoom_level = 1.0
         self.selection_start = None
         self.selection_end = None
+        self.playhead_position = 0  # Current playback position (0.0 to 1.0)
         self.setStyleSheet("background-color: #2A2A2A; border: 1px solid #444444;")
     
     def set_waveform_data(self, data):
@@ -31,6 +32,20 @@ class WaveformViewer(QWidget):
         self.selection_start = None
         self.selection_end = None
         self.update()
+    
+    def set_playhead_position(self, position):
+        """Set the current playhead position (0.0 to 1.0)"""
+        self.playhead_position = max(0.0, min(1.0, position))
+        self.update()
+
+    def mousePressEvent(self, event):
+        """Handle mouse click to set playhead position"""
+        if self.waveform_data is not None:
+            self.playhead_position = event.x() / self.width()
+            self.update()
+            # If parent has playhead_moved method, call it
+            if hasattr(self.parent(), 'on_playhead_moved'):
+                self.parent().on_playhead_moved(self.playhead_position)
     
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -104,3 +119,8 @@ class WaveformViewer(QWidget):
         
         # Draw time markers
         # In a real implementation, we would draw time markers along the bottom
+        
+        # Draw playhead
+        playhead_x = int(self.playhead_position * self.width())
+        painter.setPen(QPen(QColor('#FF5500'), 2))
+        painter.drawLine(playhead_x, 0, playhead_x, self.height())

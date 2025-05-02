@@ -4,23 +4,59 @@ import subprocess
 import numpy as np
 from pydub import AudioSegment
 from pydub.exceptions import CouldntDecodeError
+import pygame
+import tempfile
 
 class AudioProcessor:
     def __init__(self):
         self.audio_files = {}  # Dictionary to store loaded audio files
-        self.ffmpeg_path = 'ffmpeg'  # Assume ffmpeg is in the same directory
+        self.ffmpeg_path = 'ffmpeg'  # Default ffmpeg path
+        self.current_playback = None
+        self.is_playing = False
         
-        # Check if ffmpeg exists
-        if os.path.exists('ffmpeg.exe'):
-            self.ffmpeg_path = os.path.abspath('ffmpeg.exe')
+        # Initialize pygame mixer for audio playback
+        pygame.mixer.init()
+        
+        # Look for ffmpeg in various locations
+        possible_paths = [
+            'ffmpeg',
+            'ffmpeg.exe',
+            os.path.abspath('ffmpeg.exe'),
+            os.path.join('ffmpeg', 'bin', 'ffmpeg.exe'),
+            os.path.abspath(os.path.join('ffmpeg', 'bin', 'ffmpeg.exe'))
+        ]
+        
+        for path in possible_paths:
+            if os.path.exists(path) or self._check_ffmpeg(path):
+                self.ffmpeg_path = path
+                print(f"Found FFmpeg at: {path}")
+                break
         
         # Create temp directory for audio processing
         os.makedirs('temp', exist_ok=True)
+        
+        print(f"AudioProcessor initialized with FFmpeg path: {self.ffmpeg_path}")
+    
+    def _check_ffmpeg(self, path):
+        """Check if ffmpeg exists by running a simple command"""
+        try:
+            subprocess.run([path, "-version"], 
+                          stdout=subprocess.PIPE, 
+                          stderr=subprocess.PIPE, 
+                          check=False)
+            return True
+        except Exception:
+            return False
     
     def load_file(self, file_path):
         """Load an audio file and store it in memory"""
         try:
+            print(f"Attempting to load: {file_path}")
             file_name = os.path.basename(file_path)
+            
+            # Set FFmpeg path for pydub
+            AudioSegment.converter = self.ffmpeg_path
+            
             audio = AudioSegment.from_file(file_path)
             self.audio_files[file_name] = {
                 'path': file_path,
@@ -28,6 +64,7 @@ class AudioProcessor:
                 'samples': self._get_samples(audio),
                 'duration': len(audio) / 1000.0  # Duration in seconds
             }
+            print(f"Successfully loaded: {file_name}, duration: {len(audio)/1000.0}s")
             return True
         except CouldntDecodeError:
             print(f"Error: Couldn't decode {file_path}")
@@ -129,6 +166,41 @@ class AudioProcessor:
         }
         
         return first_file_name, second_file_name
+    
+    def play_audio(self, file_name):
+        """Play audio file using pygame"""
+        if file_name not in self.audio_files:
+            print(f"Cannot play: {file_name} not found in loaded files")
+            return False
+        
+        try:
+            # Stop any current playback
+            self.stop_audio()
+            
+            # Export the audio to a temporary file
+            audio = self.audio_files[file_name]['audio']
+            temp_file = os.path.join(tempfile.gettempdir(), f"temp_playback_{file_name}")
+            audio.export(temp_file, format="wav")
+            
+            # Play the audio file
+            pygame.mixer.music.load(temp_file)
+            pygame.mixer.music.play()
+            self.is_playing = True
+            self.current_playback = file_name
+            
+            print(f"Playing: {file_name}")
+            return True
+        except Exception as e:
+            print(f"Error playing audio {file_name}: {str(e)}")
+            return False
+    
+    def stop_audio(self):
+        """Stop audio playback"""
+        if pygame.mixer.music.get_busy():
+            pygame.mixer.music.stop()
+        self.is_playing = False
+        self.current_playback = None
+        return True
     
     def export_audio(self, file_path, timeline_clips):
         """Export audio from timeline to file"""
